@@ -4,12 +4,11 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 
-dotenv.config();
-
 const app = express();
 
 const allowedOrigins = [
-  'https://profile-app-frontend-omega.vercel.app'
+  'https://profile-app-frontend-omega.vercel.app',
+  'http://localhost:5000'
 ];
 
 
@@ -47,10 +46,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 
 // Serve frontend static files if needed
-app.use(express.static(path.join(__dirname, 'client/dist')));
+app.use(express.static(path.join(__dirname, '../frontend/dist'))); // Adjust as needed
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected! Reconnecting...');
+  mongoose.connect(process.env.MONGO_URI); // Auto-reconnect
 });
 
 const PORT = process.env.PORT || 5000;
