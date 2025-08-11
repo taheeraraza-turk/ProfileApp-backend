@@ -25,10 +25,12 @@ app.use(cors({
   },
   credentials: true, // Enable cookies/auth headers if needed
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization'] // Allowed headers
+  allowedHeaders: ['Content-Type', 'Authorization'] ,// Allowed headers
+  optionsSuccessStatus: 200
 }));
 // Handle preflight requests
-app.options('*', cors());
+app.options('*', cors(corsOptions)); 
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // MongoDB connection
