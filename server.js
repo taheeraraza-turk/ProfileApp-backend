@@ -17,16 +17,9 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: function(origin, callback){
-    // allow requests with no origin (like curl, postman)
-    if(!origin) return callback(null, true);
-    if(allowedOrigins.indexOf(origin) === -1){
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true,  // agar aap credentials bhej rahe hain
+   origin: 'https://profile-app-frontend-omega.vercel.app', // your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
