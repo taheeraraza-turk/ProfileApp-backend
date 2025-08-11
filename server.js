@@ -1,63 +1,92 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 
 const app = express();
 
+// ======================
+// BULLETPROOF CORS SETUP
+// ======================
 const allowedOrigins = [
   'https://profile-app-frontend-omega.vercel.app',
-  'http://localhost:5000'
+  'http://localhost:3000' // Make sure this matches your frontend dev port
 ];
 
-
-const corsOptions = {
-  origin: [
-    'https://profile-app-frontend-omega.vercel.app',
-    'http://localhost:3000'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 204
-};
-// Handle preflight requests
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); 
-app.use(express.json());
-
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true, useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
-// Add before routes
+// 1. CORS Middleware (Handles preflight and actual requests)
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://profile-app-frontend-omega.vercel.app');
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Immediately respond to OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
   next();
 });
-// Routes
-const authRoutes = require('./routes/auth');
-const profileRoutes = require('./routes/profile');
 
-app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes);
-
-// Serve frontend static files if needed
-app.use(express.static(path.join(__dirname, '../frontend/dist'))); // Adjust as needed
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+// ======================
+// DATABASE CONNECTION
+// ======================
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  retryWrites: true,
+  w: 'majority'
+})
+.then(() => console.log('MongoDB connected successfully'))
+.catch(err => {
+  console.error('MongoDB connection error:', err);
+  process.exit(1); // Exit if DB connection fails
 });
 
+// Auto-reconnect logic
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected! Reconnecting...');
-  mongoose.connect(process.env.MONGO_URI); // Auto-reconnect
+  mongoose.connect(process.env.MONGO_URI);
 });
 
+// ======================
+// ROUTES
+// ======================
+app.use(express.json());
+
+// Auth Routes
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
+// Profile Routes
+const profileRoutes = require('./routes/profile');
+app.use('/api/profile', profileRoutes);
+
+// ======================
+// STATIC FILES (FOR PRODUCTION)
+// ======================
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+  });
+}
+
+// ======================
+// ERROR HANDLING
+// ======================
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+// ======================
+// SERVER START
+// ======================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+});
