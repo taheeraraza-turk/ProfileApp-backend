@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
-
+const allowedOrigins = ['https://profile-app-frontend-omega.vercel.app'];
 // React build folder serve karen
 app.use(express.static(path.join(__dirname, 'client/build')));
 
@@ -16,7 +16,18 @@ app.get('*', (req, res) => {
 dotenv.config();
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: function(origin, callback){
+    // allow requests with no origin (like curl, postman)
+    if(!origin) return callback(null, true);
+    if(allowedOrigins.indexOf(origin) === -1){
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,  // agar aap credentials bhej rahe hain
+}));
 app.use(express.json());
 
 // Connect to MongoDB
