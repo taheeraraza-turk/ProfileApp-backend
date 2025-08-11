@@ -13,22 +13,22 @@ const allowedOrigins = [
 
 
 app.use(cors({
-  origin: function(origin, callback) {
-    // Postman ya curl jaise requests jinka origin nahi hota allow karen
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) === -1) {
-      // Agar origin list mein nahi hai to error bhej dein
-      const msg = `CORS error: The origin ${origin} is not allowed.`;
-      return callback(new Error(msg), false);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-
-    // Origin allowed hai, aage badho
-    return callback(null, true);
   },
-  credentials: true,  // cookies, auth headers allow karne ke liye
+  credentials: true, // Enable cookies/auth headers if needed
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'] // Allowed headers
 }));
-
+// Handle preflight requests
+app.options('*', cors());
 app.use(express.json());
 
 // MongoDB connection
