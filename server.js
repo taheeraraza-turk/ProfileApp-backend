@@ -19,7 +19,8 @@ const app = express();
 app.use(cors({
    origin: 'https://profile-app-frontend-omega.vercel.app', // your frontend URL
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 app.use(express.json());
 
