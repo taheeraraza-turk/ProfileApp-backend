@@ -3,6 +3,15 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path');
+
+// React build folder serve karen
+app.use(express.static(path.join(__dirname, 'client/build')));
+
+// SPA fallback: sab unknown routes ko React ke index.html pe redirect karo
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+});
 
 dotenv.config();
 const app = express();
